@@ -36,7 +36,7 @@
                         {
                             <tr>
                                 <td>@alumno.Nombre</td>
-                                <td>@alumno.Matricula</td>
+                                <td class="tdMatricula">@alumno.Matricula</td>
                                 <td>@alumno.CorreoElectronico</td>
                                 <td>@alumno.Modalidad</td>
                                 <td>@alumno.Estado</td>
@@ -44,7 +44,6 @@
                             </tr>
                         }
                     </tbody>
-
                 </table>
             </div>
 
@@ -61,8 +60,8 @@
         <hr />
         <h2 class="form-text">Seleccione un documento a registrar</h2>
         <div>
-            <div class="row flex-lg-row-reverse align-items-left g-5 py-5">
-                <div class="col-10 col-sm-8 col-lg-6 ">
+            <div class="row flex-lg-row-reverse align-items-left ">
+                <div class="col-10 col-sm-8 col-lg-6">
                     <input class="btn btn-primary" id="btnAgregarTipoDeDocumento" type="button" value="Agregar tipo de documento" />
                 </div>
                 <div class="col-lg-6">
@@ -77,9 +76,8 @@
                 </div>
             </div>
         </div>
-        <br />
         <div>
-            <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+            <div class="row flex-lg-row-reverse align-items-center ">
                 <div class="col-10 col-sm-8 col-lg-6 align-bottom">
                     <input class="btn btn-toolbar" id="btnSeleccionarDocumento" type="file" value="SeleccionarDocumento" />
                 </div>
@@ -203,14 +201,27 @@
             });
         }
 
+        function eliminarClasesDeElemento(elemento, clases) {
+            for (let clase of clases) {
+                elemento.classList.remove(clase);
+            }
+        }
+
+        function agregarClasesAElemento(elemento, clases) {
+            for (let clase of clases) {
+                elemento.classList.add(clase);
+            }
+        }
+
+        const clasesParaMarcarFilasSeleccionadas = [ 'bg-primary', 'bg-gradient', 'text-light'];
+
         function asignarClicDeFilaDeTblAlumnos() {
             let filasTblAlumnos = document.querySelector('#tblAlumnos > tbody').rows;
 
             for (let filaActual of filasTblAlumnos) {
                 filaActual.addEventListener('click', function (event) {
                     let target = event.currentTarget;
-                    let idAlumno = target.querySelector('.tdAlumnoID').textContent;
-
+                    let idAlumno = target.querySelector('.tdMatricula').textContent;
 
                     let inputAlumnoID = document.getElementById('inputAlumnoID');
                     inputAlumnoID.setAttribute('value', idAlumno);

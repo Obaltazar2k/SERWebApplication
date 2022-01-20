@@ -16,7 +16,7 @@ namespace SER.Pages
         private IWebHostEnvironment Environment;
 
         [BindProperty]
-        public int IDAlumnoSeleccionado { get; set; }
+        public string IDAlumnoSeleccionado { get; set; }
         [BindProperty]
         public IFormFile ArchivoDeProyectoGuiado { get; set; }
         public RegistrarDocumentoProyectoGuiadoModel(SERContext context, IWebHostEnvironment _environment)
