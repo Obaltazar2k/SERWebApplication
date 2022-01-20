@@ -1,0 +1,296 @@
+﻿@page
+@model SER.Pages.RegistrarDocumentoProyectoGuiadoModel
+@{
+    ViewData["Title"] = "Registrar documento de proyecto guiado";
+    string URL_REGISTRAR_DOCUMENTO_PROYECTO_GUIADO = "https://" + Request.Host + Request.Path;
+    int NUMERO_DE_TECLA_ENTER = 13;
+    int LONGITUD_MINIMA_DE_CADENA = 3;
+    int MILISEGUNDOS_DE_ESPERA_TRAS_REGISTRAR = 3000;
+    string HANDLER_ALUMNOS = "alumnos";
+}
+<h1 class="mb-3">Registrar documento de proyecto guiado</h1>
+<form id="formRegistrarDocumentoDeProyectoGuiado" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger" />
+
+    <div id="seleccionarAlumnos">
+        <h4>Selección de alumno</h4>
+        <hr />
+        <h2 class="form-text">Seleccione un alumno</h2>
+        <div class="form-group">
+            <input id="searchBuscarAlumnos" class="form-control" type="search" placeholder="Buscar" />
+
+            <div class="table-responsive">
+                <table id="tblAlumnos" class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Matrícula</th>
+                            <th>Correo electrónico</th>
+                            <th>Modalidad</th>
+                            <th>Estado</th>
+                            <th>Fecha de inicio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var alumno in Model.AlumnosProyectoGuiado)
+                        {
+                            <tr>
+                                <td>@alumno.Nombre</td>
+                                <td>@alumno.Matricula</td>
+                                <td>@alumno.CorreoElectronico</td>
+                                <td>@alumno.Modalidad</td>
+                                <td>@alumno.Estado</td>
+                                <td>@alumno.Fechadeinicio</td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+            <input id="inputAlumnoID" hidden asp-for="IDAlumnoSeleccionado" />
+
+            <div class="clearfix">
+                <input class="btn btn-primary float-right" type="button" id="btnSeleccionarTipoDeDocumento" value="Seleccionar tipo de proyecto" />
+            </div>
+        </div>
+    </div>
+
+    <div id="seleccionarTipoDocumento" class="col-md-10">
+        <h4>Selección de documento</h4>
+        <hr />
+        <h2 class="form-text">Seleccione un documento a registrar</h2>
+        <div>
+            <div class="row flex-lg-row-reverse align-items-left g-5 py-5">
+                <div class="col-10 col-sm-8 col-lg-6 ">
+                    <input class="btn btn-primary" id="btnAgregarTipoDeDocumento" type="button" value="Agregar tipo de documento" />
+                </div>
+                <div class="col-lg-6">
+                    <select name="tipoDocumento" id="tipoDocumento" class="form-control">
+                        <option disabled selected>Seleccione el tipo de documento</option>
+                        <option>Anteproyecto</option>
+                        <option>Protocolo de investigación</option>
+                        <option>Protocolo de RSL o similar</option>
+                        <option>Reporte de RSL o similar</option>
+                        <option>Láminas de presentación en seminario</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <br />
+        <div>
+            <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+                <div class="col-10 col-sm-8 col-lg-6 align-bottom">
+                    <input class="btn btn-toolbar" id="btnSeleccionarDocumento" type="file" value="SeleccionarDocumento" />
+                </div>
+                <div class="col-lg-6">
+                    <label for="inputNotas">Notas:</label> <br>
+                    <textarea class="form-control" name="notas" id="inputNotas" resizable="true"></textarea>
+                </div>
+            </div>
+        </div>
+        <br /><br />
+        <div class="clearfix">
+            <input class="btn btn-secondary float-left" id="btnRegresarSeleccionarAlumno" type="button" value="Regresar" />
+            <input class="btn btn-primary float-right" type="button" id="btnRegistrarDocumento" value="Registrar documento" />
+        </div>
+    </div>
+</form>
+
+<div class="d-flex justify-content-center" id="contenedorDePasoActual">
+    <div class="rounded-circle bg-primary p-3 m-1 d-inline bg-secondary indicadorDePaso" id="pasoActual1"></div>
+    <div class="rounded-circle bg-primary p-3 m-1 d-inline bg-secondary indicadorDePaso" id="pasoActual2"></div>
+</div>
+
+<div id="divMensajeDeError" class="clearfix mt-3"></div>
+
+@section scripts{
+    <script defer>
+        function desasignarEventoPorDefectoDeTecla(numeroDeTecla) {
+            let inputs = document.getElementsByTagName('input');
+            for (let input of inputs) {
+                input.addEventListener('keydown', function (event) {
+                    if (event.which === numeroDeTecla) {
+                        event.preventDefault();
+                    }
+                });
+            }
+        }
+
+        async function buscarDatosPorHandler(handler, cadenaDeBusqueda = '') {
+            let url = new URL('@URL_REGISTRAR_DOCUMENTO_PROYECTO_GUIADO');
+            url.searchParams.append('handler', handler);
+
+            if (cadenaDeBusqueda) {
+                url.searchParams.append('cadenaDeBusqueda', cadenaDeBusqueda);
+            }
+
+            let resultado;
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    resultado = await response.json();
+                }
+                else if (response.status == @((Int16)System.Net.HttpStatusCode.NotFound)) {
+                    resultado = '';
+                }
+                else {
+                    throw new Error(`Error en buscarDatosPorHandler. Respuesta del servidor ${response.status} no soportada.`);
+                }
+            }
+            catch (error) {
+                console.error('Error, hubo un error al solicitar información al servidor: ', error);
+                throw error;
+            }
+            return resultado;
+        }
+
+        function populateAlumnos(jsonAlumnos) {
+            let tblAlumnosBody = document.querySelector('#tblAlumnos > tbody');
+            tblAlumnosBody.innerHTML = '';
+
+            jsonAlumnos.forEach(element => {
+                let row = document.createElement('tr');
+
+                let tdID = document.createElement('td');
+                tdID.classList.add('tdAlumnoID');
+                tdID.appendChild(document.createTextNode(element.id));
+                tdID.setAttribute('hidden', true);
+                row.appendChild(tdID);
+
+                let tdNombre = document.createElement('td');
+                tdNombre.appendChild(document.createTextNode(element.nombre));
+                row.appendChild(tdNombre);
+
+                let tdMatricula = document.createElement('td');
+                tdMatricula.appendChild(document.createTextNode(element.matricula));
+                row.appendChild(tdMatricula);
+
+                let tdCorreoElectronico = document.createElement('td');
+                tdCorreoElectronico.appendChild(document.createTextNode(element.correoElectronico));
+                row.appendChild(tdCorreoElectronico);
+
+                tblAlumnosBody.appendChild(row);
+            });
+
+            asignarClicDeFilaDeTblAlumnos();
+        }
+
+        function asignarEnterDeBuscarAlumnos() {
+            let searchBuscarAlumnos = document.getElementById('searchBuscarAlumnos');
+            searchBuscarAlumnos.addEventListener('keydown', (event) => {
+                if (event.which === @NUMERO_DE_TECLA_ENTER) {
+                    let cadenaDeBusquedaAlumnos = (document.getElementById('searchBuscarAlumnos').value).toUpperCase();
+
+                    let inputAlumnoID = document.getElementById('inputAlumnoID');
+                    inputAlumnoID.setAttribute('value', 0);
+
+                    buscarDatosPorHandler('@HANDLER_ALUMNOS', cadenaDeBusquedaAlumnos)
+                        .then((alumnos) => {
+                            if (alumnos) {
+                                populateAlumnos(alumnos);
+                            }
+                            else {
+                                let tblAlumnosBody = document.querySelector('#tblAlumnos > tbody');
+                                tblAlumnosBody.innerHTML = '';
+                            }
+                        })
+                        .catch(() => {
+                            mostrarMensajeEnPantalla('Error al cargar alumnos.');
+                        });
+                }
+            });
+        }
+
+        function asignarClicDeFilaDeTblAlumnos() {
+            let filasTblAlumnos = document.querySelector('#tblAlumnos > tbody').rows;
+
+            for (let filaActual of filasTblAlumnos) {
+                filaActual.addEventListener('click', function (event) {
+                    let target = event.currentTarget;
+                    let idAlumno = target.querySelector('.tdAlumnoID').textContent;
+
+
+                    let inputAlumnoID = document.getElementById('inputAlumnoID');
+                    inputAlumnoID.setAttribute('value', idAlumno);
+                    for (let fila of filasTblAlumnos) {
+                        eliminarClasesDeElemento(fila, clasesParaMarcarFilasSeleccionadas);
+                    }
+
+                    agregarClasesAElemento(filaActual, clasesParaMarcarFilasSeleccionadas);
+                });
+            }
+        }
+
+        function validarSeleccionDeAlumno() {
+            let inputAlumnoID = document.getElementById('inputAlumnoID');
+            let resultadoValidacion = false;
+
+            if (inputAlumnoID.value > 0) {
+                resultadoValidacion = true;
+            }
+
+            return resultadoValidacion;
+        }
+
+        desasignarEventoPorDefectoDeTecla(@NUMERO_DE_TECLA_ENTER);
+        asignarEnterDeBuscarAlumnos();
+        asignarClicDeFilaDeTblAlumnos();
+    </script>
+
+    <script defer id="scriptAdministrarPasos">              
+        function asignarLogicaDeCambioDePasosAFormulario() {
+            let formRegistrarTrabajoRecepcional = document.getElementById('formRegistrarDocumentoDeProyectoGuiado');
+            for (const nodo of formRegistrarTrabajoRecepcional.children) {
+                nodo.setAttribute('hidden', true);
+            }
+
+            let panelSeleccionarAlumnos = document.getElementById('seleccionarAlumnos');
+            let panelSeleccionarTipoDeDocumento = document.getElementById('seleccionarTipoDocumento');
+            panelSeleccionarAlumnos.removeAttribute('hidden');
+
+            let indicadorDePasoActual1 = document.getElementById('pasoActual1');
+            indicadorDePasoActual1.classList.add('bg-primary');
+            indicadorDePasoActual1.classList.remove('bg-secondary');
+
+            let indicadorDePasoActual2 = document.getElementById('pasoActual2');
+
+            function marcarIndicadorDePasoActual(indicadorDePasoActual, esPasoActual) {
+                if (esPasoActual) {
+                    indicadorDePasoActual.classList.add('bg-primary');
+                    indicadorDePasoActual.classList.remove('bg-secondary');
+                }
+                else {
+                    indicadorDePasoActual.classList.add('bg-secondary');
+                    indicadorDePasoActual.classList.remove('bg-primary');
+                }
+            }
+
+            function asignarClicABtnSeleccionarTipoDeDocumento() {
+                let btnSeleccionarTipoDeDocumento = document.getElementById('btnSeleccionarTipoDeDocumento');
+                btnSeleccionarTipoDeDocumento.addEventListener('click', function (event) {
+                    panelSeleccionarAlumnos.setAttribute('hidden', true);
+                    panelSeleccionarTipoDeDocumento.removeAttribute('hidden');
+                    marcarIndicadorDePasoActual(indicadorDePasoActual1, false);
+                    marcarIndicadorDePasoActual(indicadorDePasoActual2, true);
+                });
+            }
+
+            function asignarClicABtnRegresarSeleccionarAlumno() {
+                let btnRegresarSeleccionarAlumno = document.getElementById('btnRegresarSeleccionarAlumno');
+                btnRegresarSeleccionarAlumno.addEventListener('click', function () {
+                    panelSeleccionarTipoDeDocumento.setAttribute('hidden', true);
+                    panelSeleccionarAlumnos.removeAttribute('hidden');
+
+                    marcarIndicadorDePasoActual(indicadorDePasoActual2, false);
+                    marcarIndicadorDePasoActual(indicadorDePasoActual1, true);
+                });
+            }
+
+            asignarClicABtnSeleccionarTipoDeDocumento();
+            asignarClicABtnRegresarSeleccionarAlumno();
+        }
+        asignarLogicaDeCambioDePasosAFormulario();
+    </script>
+}
