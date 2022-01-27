@@ -8,6 +8,7 @@ namespace SER.Models.DB
         public ExperienciaEducativa()
         {
             Direccions = new HashSet<Direccion>();
+            Documentos = new HashSet<Documento>();
             PlanDeCursos = new HashSet<PlanDeCurso>();
             Alumnos = new HashSet<Alumno>();
         }
@@ -22,6 +23,7 @@ namespace SER.Models.DB
 
         public virtual Profesor? Profesor { get; set; }
         public virtual ICollection<Direccion> Direccions { get; set; }
+        public virtual ICollection<Documento> Documentos { get; set; }
         public virtual ICollection<PlanDeCurso> PlanDeCursos { get; set; }
 
         public virtual ICollection<Alumno> Alumnos { get; set; }
