@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SER.Pages
 {
+    [IgnoreAntiforgeryToken]
     public class RegistrarDocumentoProyectoGuiadoModel : PageModel
     {
         private readonly SERContext _context;
@@ -16,9 +17,15 @@ namespace SER.Pages
         private IWebHostEnvironment Environment;
 
         [BindProperty]
-        public int IDAlumnoSeleccionado { get; set; }
+        public string IDAlumnoSeleccionado { get; set; }
+        [BindProperty]
+        public Documento DocumentoProyectoGuiado { get; set; }
         [BindProperty]
         public IFormFile ArchivoDeProyectoGuiado { get; set; }
+        [BindProperty]
+        public string NombreDocumento { get; set; }
+        [BindProperty]
+        public string NotaDocumento { get; set; }
         public RegistrarDocumentoProyectoGuiadoModel(SERContext context, IWebHostEnvironment _environment)
         {
             _context = context;
@@ -30,25 +37,9 @@ namespace SER.Pages
         {
             try
             {
-                var alumnosProyectoGuiado = _context.AlumnoTrabajoRecepcionalProyectoGuiadoViews.ToList();
+                getAlumnosProyectoGuiado();
 
-                if (alumnosProyectoGuiado.Any())
-                {
-                    foreach (var alumno in alumnosProyectoGuiado)
-                    {
-                        AlumnoProyectoGuiado alumnoPG = new AlumnoProyectoGuiado()
-                        {
-                            Nombre = alumno.Nombre,
-                            CorreoElectronico = alumno.CorreoElectronico,
-                            Matricula = alumno.Matricula,
-                            Modalidad = alumno.Modalidad,
-                            Estado = alumno.Estado,
-                            Fechadeinicio = alumno.ShortDateTime(alumno.Fechadeinicio)
-                        };
-                        AlumnosProyectoGuiado.Add(alumnoPG);
-                    }
-                }
-                else
+                if (!AlumnosProyectoGuiado.Any())
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "No hay aulumnos registrados en la EE Proyectio Guiado");
                 }
@@ -61,6 +52,52 @@ namespace SER.Pages
             }
 
             return Page();
+        }
+
+        [HttpPost]
+        public IActionResult OnPost()
+        {
+            getAlumnosProyectoGuiado();
+            AlumnoProyectoGuiado alumnoSeleccionado = AlumnosProyectoGuiado.Where(a => a.Matricula.Equals(IDAlumnoSeleccionado)).FirstOrDefault();
+            DocumentoProyectoGuiado.TrabajoRecepcionalId = alumnoSeleccionado.TrabajoRecepcionalId;
+            DocumentoProyectoGuiado.ExperienciaEducativaId = alumnoSeleccionado.ExperienciaEducativaID;
+            if (ArchivoDeProyectoGuiado != null)
+            {
+                if (ArchivoDeProyectoGuiado.Length > 0)
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        ArchivoDeProyectoGuiado.CopyTo(memoryStream);
+                        var fileBytes = memoryStream.ToArray();
+                        DocumentoProyectoGuiado.Archivo = fileBytes;
+                    }
+                }
+
+            }
+            _context.Documentos.Add(DocumentoProyectoGuiado);
+            _context.SaveChanges();
+            return new OkObjectResult("Documento de proyecto guiado guardado.");
+        }
+
+        public void getAlumnosProyectoGuiado()
+        {
+            var alumnosProyectoGuiado = _context.AlumnoTrabajoRecepcionalProyectoGuiadoViews.ToList();
+
+            foreach (var alumno in alumnosProyectoGuiado)
+            {
+                AlumnoProyectoGuiado alumnoPG = new AlumnoProyectoGuiado()
+                {
+                    Nombre = alumno.Nombre,
+                    CorreoElectronico = alumno.CorreoElectronico,
+                    Matricula = alumno.Matricula,
+                    Modalidad = alumno.Modalidad,
+                    Estado = alumno.Estado,
+                    Fechadeinicio = alumno.ShortDateTime(alumno.Fechadeinicio),
+                    ExperienciaEducativaID = alumno.ExperienciaEducativaId,
+                    TrabajoRecepcionalId = alumno.TrabajoRecepcionalId
+                };
+                AlumnosProyectoGuiado.Add(alumnoPG);
+            }
         }
     }
 }

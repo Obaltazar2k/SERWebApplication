@@ -8,6 +8,8 @@
         public string? Modalidad { get; set; }
         public string? Estado { get; set; }
         public string Fechadeinicio { get; set; }
-        
+        public int ExperienciaEducativaID { get; set; }
+        public int TrabajoRecepcionalId { get; set; }
+
     }
 }
