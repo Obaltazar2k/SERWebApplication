@@ -3,23 +3,19 @@
 @{
     ViewData["Title"] = "Registrar documento de proyecto guiado";
     string URL_REGISTRAR_DOCUMENTO_PROYECTO_GUIADO = "https://" + Request.Host + Request.Path;
-    int NUMERO_DE_TECLA_ENTER = 13;
-    int LONGITUD_MINIMA_DE_CADENA = 3;
     int MILISEGUNDOS_DE_ESPERA_TRAS_REGISTRAR = 3000;
-    string HANDLER_ALUMNOS = "alumnos";
 }
 <h1 class="mb-3">Registrar documento de proyecto guiado</h1>
 
-<form id="formRegistrarDocumentoDeProyectoGuiado" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger" />
+<form id="formRegistrarDocumentoDeProyectoGuiado" method="post" name="formularioRegistrarDocumentoProyectoGuiado" 
+    novalidate enctype="multipart/form-data">
+    <div asp-validation-summary="ModelOnly" class="text-danger"/>
 
     <div id="seleccionarAlumnos">
         <h4>Selección de alumno</h4>
         <hr />
         <h2 class="form-text">Seleccione un alumno</h2>
         <div class="form-group">
-            <input id="searchBuscarAlumnos" class="form-control" type="search" placeholder="Buscar" />
-
             <div class="table-responsive">
                 <table id="tblAlumnos" class="table table-hover">
                     <thead>
@@ -48,7 +44,7 @@
                 </table>
             </div>
 
-            <input id="inputAlumnoID" hidden asp-for="IDAlumnoSeleccionado" />
+            <input id="inputAlumnoID" hidden asp-for="IDAlumnoSeleccionado" required="false"/>
 
             <div class="clearfix">
                 <input class="btn btn-primary float-right" type="button" id="btnSeleccionarTipoDeDocumento" value="Seleccionar tipo de proyecto" disabled/>
@@ -77,7 +73,7 @@
                                 <form id="formAgregarTipoDeDocumento">
                                     <div class="form-group">
                                         <label for="inputNombres">Tipo de documento</label>
-                                        <input type="text"  id="inputNombres" placeholder="Ingrese el tipo de documento" class="form-control" required />
+                                        <input type="text"  id="inputNombreTipoDocumento" placeholder="Ingrese el tipo de documento" class="form-control" required />
                                         <span asp-validation-for="DocumentoProyectoGuiado.NombreDocumento" class="text-danger"></span>
                                     </div>
                                 </form>
@@ -86,7 +82,7 @@
                                 <div class="row flex-lg-row-reverse align-items-right">
                                     <div class="clearfix">
                                         <button type="button" id="btnCerrarVentanaModal" class="btn btn-secondary float-left">Cancelar</button>
-                                        <button type="submit" class="btn btn-primary float-right">Agregar tipo de documento</button>
+                                        <button type="button" id="btnAgregarTipoDeDocumentoModal" class="btn btn-primary float-right">Agregar tipo de documento</button>
                                     </div>
                                 </div>   
                             </div>
@@ -110,7 +106,8 @@
             <div class="row flex-lg-row-reverse align-items-center ">
                 <div class="col-10 col-sm-8 col-lg-6 align-bottom">
                     <label for="inputSeleccionarDocumento">Subir documento</label>
-                    <input type="file" asp-for="ArchivoDeProyectoGuiado" class="form-control" id="inputArchivo"  />
+                    <input type="file" asp-for="ArchivoDeProyectoGuiado" class="form-control" id="inputArchivo"  accept="application/msword, application/pdf, 
+                    application/vnd.ms-powerpoint"/>
                     <span asp-validation-for="DocumentoProyectoGuiado.Archivo" class="text-danger"></span>
                 </div>
                 <div class="col-lg-6">
@@ -119,11 +116,11 @@
                 </div>
             </div>
         </div>
-        <input id="inputNombreDocumento" hidden asp-for="NombreDocumento" />
+        <input id="inputNombreDocumento" hidden asp-for="NombreDocumento" required="false"/>
         <br /><br />
         <div class="clearfix">
             <input class="btn btn-secondary float-left" id="btnRegresarSeleccionarAlumno" type="button" value="Regresar" />
-            <input class="btn btn-primary float-right" type="submit" id="btnRegistrarDocumento" value="Registrar documento"/>
+            <input class="btn btn-primary float-right" type="button" id="btnRegistrarDocumento" value="Registrar documento"/>
         </div>
     </div>
 </form>
@@ -137,17 +134,6 @@
 
 @section scripts{
     <script defer>
-        function desasignarEventoPorDefectoDeTecla(numeroDeTecla) {
-            let inputs = document.getElementsByTagName('input');
-            for (let input of inputs) {
-                input.addEventListener('keydown', function (event) {
-                    if (event.which === numeroDeTecla) {
-                        event.preventDefault();
-                    }
-                });
-            }
-        }
-
         function mostrarMensajeEnPantalla(mensaje, esMensajeDeError = true) {
             let divMensajeDeError = document.getElementById('divMensajeDeError');
             let divError = document.createElement('div');
@@ -169,6 +155,7 @@
             buttonDescartar.setAttribute('type', 'button');
             buttonDescartar.setAttribute('data-dismiss', 'alert');
             buttonDescartar.setAttribute('aria-label', 'Close');
+            
 
             let span = document.createElement('span');
             span.setAttribute('aria-hidden', true);
@@ -177,92 +164,6 @@
             divError.appendChild(buttonDescartar);
 
             divMensajeDeError.appendChild(divError);
-        }
-
-        async function buscarDatosPorHandler(handler, cadenaDeBusqueda = '') {
-            let url = new URL('@URL_REGISTRAR_DOCUMENTO_PROYECTO_GUIADO');
-            url.searchParams.append('handler', handler);
-
-            if (cadenaDeBusqueda) {
-                url.searchParams.append('cadenaDeBusqueda', cadenaDeBusqueda);
-            }
-
-            let resultado;
-
-            try {
-                const response = await fetch(url);
-                if (response.ok) {
-                    resultado = await response.json();
-                }
-                else if (response.status == @((Int16)System.Net.HttpStatusCode.NotFound)) {
-                    resultado = '';
-                }
-                else {
-                    throw new Error(`Error en buscarDatosPorHandler. Respuesta del servidor ${response.status} no soportada.`);
-                }
-            }
-            catch (error) {
-                console.error('Error, hubo un error al solicitar información al servidor: ', error);
-                throw error;
-            }
-            return resultado;
-        }
-
-        function populateAlumnos(jsonAlumnos) {
-            let tblAlumnosBody = document.querySelector('#tblAlumnos > tbody');
-            tblAlumnosBody.innerHTML = '';
-
-            jsonAlumnos.forEach(element => {
-                let row = document.createElement('tr');
-
-                let tdID = document.createElement('td');
-                tdID.classList.add('tdAlumnoID');
-                tdID.appendChild(document.createTextNode(element.id));
-                tdID.setAttribute('hidden', true);
-                row.appendChild(tdID);
-
-                let tdNombre = document.createElement('td');
-                tdNombre.appendChild(document.createTextNode(element.nombre));
-                row.appendChild(tdNombre);
-
-                let tdMatricula = document.createElement('td');
-                tdMatricula.appendChild(document.createTextNode(element.matricula));
-                row.appendChild(tdMatricula);
-
-                let tdCorreoElectronico = document.createElement('td');
-                tdCorreoElectronico.appendChild(document.createTextNode(element.correoElectronico));
-                row.appendChild(tdCorreoElectronico);
-
-                tblAlumnosBody.appendChild(row);
-            });
-
-            asignarClicDeFilaDeTblAlumnos();
-        }
-
-        function asignarEnterDeBuscarAlumnos() {
-            let searchBuscarAlumnos = document.getElementById('searchBuscarAlumnos');
-            searchBuscarAlumnos.addEventListener('keydown', (event) => {
-                if (event.which === @NUMERO_DE_TECLA_ENTER) {
-                    let cadenaDeBusquedaAlumnos = (document.getElementById('searchBuscarAlumnos').value).toUpperCase();
-
-                    let inputAlumnoID = document.getElementById('inputAlumnoID');
-                    inputAlumnoID.setAttribute('value', 0);
-
-                    buscarDatosPorHandler('@HANDLER_ALUMNOS', cadenaDeBusquedaAlumnos)
-                        .then((alumnos) => {
-                            if (alumnos) {
-                                populateAlumnos(alumnos);
-                            }
-                            else {
-                                let tblAlumnosBody = document.querySelector('#tblAlumnos > tbody');
-                                tblAlumnosBody.innerHTML = '';
-                            }
-                        })
-                        .catch(() => {
-                            mostrarMensajeEnPantalla('Error al cargar alumnos.');
-                        });
-                }
-            });
         }
 
         function eliminarClasesDeElemento(elemento, clases) {
@@ -300,27 +201,12 @@
             }            
         }
 
-        function asignarClicASelectTipoDeProyecto() {
+        function asignarClicASelectTipoDeDocumento() {
             let selectTipoDeDocumento = document.getElementById('selectTipoDocumento');
-            selectTipoDeProyecto.addEventListener('change', (event) => {
-                let elementoOptionSeleccionado = selectTipoDeDocumento.options[selectTipoDeDocumento.selectedIndex];
-                let idTipoDeDocumento = event.target.value;
-                let tipoDeDocumento = elementoOptionSeleccionado.getAttribute('data-tipodedocumento');
-
+            selectTipoDeDocumento.addEventListener('change', (event) => {
                 let inputNombreDocumento = document.getElementById('inputNombreDocumento');
-                inputNombreDocumento.setAttribute('value', tipoDeDocumento);
+                inputNombreDocumento.setAttribute('value', selectTipoDeDocumento.value);
             });
-        }
-
-        function validarSeleccionDeAlumno() {
-            let inputAlumnoID = document.getElementById('inputAlumnoID');
-            let resultadoValidacion = false;
-
-            if (inputAlumnoID.value > 0) {
-                resultadoValidacion = true;
-            }
-
-            return resultadoValidacion;
         }
 
         function validarSeleccionDeTipoDeDocumento() {
@@ -328,11 +214,9 @@
             let notaDocumento =  document.getElementById('inputNotas').value;
             let resultadoValidacion = false;
             console.log(selectSeleccionarTipoDeDocumento);
-
-            if (selectSeleccionarTipoDeDocumento.value) {              
-                if (selectSeleccionarTipoDeDocumento.value != "Seleccione el tipo de documento") {                   
-                    resultadoValidacion = true;
-                }
+              
+            if (selectSeleccionarTipoDeDocumento != "Seleccione el tipo de documento") {                   
+                resultadoValidacion = true;
             }
             return resultadoValidacion;
         }
@@ -342,7 +226,7 @@
             let notaDocumento =  document.getElementById('inputNotas').value;
             let resultadoValidacion = false;
 
-            if (archivoSeleccionado != null) {              
+            if (archivoSeleccionado != "") {              
                 resultadoValidacion = true
             }
             return resultadoValidacion;
@@ -351,8 +235,9 @@
         function asignarClicARegistrarDocumentoDeProyectoGuiado() {
             let btnRegistrarDocumentoProyectoGuiado = document.getElementById('btnRegistrarDocumento');
             btnRegistrarDocumentoProyectoGuiado.addEventListener('click', () => {
+                console.log("Entro en evento clic registrar documento");
                 let existioUnErrorDeValidacion = false;
-                if (!validarSeleccionDeTipoDeProyecto()) {
+                if (!validarSeleccionDeTipoDeDocumento()) {
                     mostrarMensajeEnPantalla('Debe seleccionar un tipo de documento.');
                     existioUnErrorDeValidacion = true;
                 }
@@ -362,37 +247,43 @@
                     existioUnErrorDeValidacion = true;
                 }
 
-                /*if (!existioUnErrorDeValidacion) {
+                if (!existioUnErrorDeValidacion) {
+                    console.log("No hubo error")
                     let form = document.getElementById('formRegistrarDocumentoDeProyectoGuiado');
                     let formData = new FormData(form);
 
-                    let url = new URL('URL_REGISTRAR_DOCUMENTO_PROYECTO_GUIADO');
-
+                    let url = new URL('@URL_REGISTRAR_DOCUMENTO_PROYECTO_GUIADO');
+                    console.log(url);
+                    console.log(formData);
 
                     fetch(url, {
                         method: 'post',
+
                         body: formData
                     })
-                        .then(function (response) {
-                            if (response.status !== 200) {
-                                console.error(response.body + response.status);
-                            }
-                            else {
-                                btnRegistrarDocumentoProyectoGuiado.setAttribute('disabled', true);
-                                mostrarMensajeEnPantalla('Documento de proyecto guiado registrado exitosamente!', false);
-                                setTimeout(() => { window.location.href = '/Menus/UIMaestro' }, @MILISEGUNDOS_DE_ESPERA_TRAS_REGISTRAR);
-                            }
-                        })
-                        .catch(function (err) {
-                            console.log(`error: ${err}`);
-                        });
-                }*/
+                    .then(function (response) {
+                        if (response.status !== 200) {
+                            console.log("Entro en primer if");
+                            console.log(response);
+                            alert("error:  status - " + error.status + " | text: " + error.statusText);
+                        }
+                        else {
+                            btnRegistrarDocumentoProyectoGuiado.setAttribute('disabled', true);
+                            mostrarMensajeEnPantalla('Documento de proyecto guiado registrado exitosamente!', false);
+                            setTimeout(() => { window.location.href = '/Menus/UIMaestro' }, @MILISEGUNDOS_DE_ESPERA_TRAS_REGISTRAR);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.log("Entro en catch");
+                        console.log(`error: ${err}`);
+                    });           
+                }
             });
         }
 
-        desasignarEventoPorDefectoDeTecla(@NUMERO_DE_TECLA_ENTER);
-        asignarEnterDeBuscarAlumnos();
         asignarClicDeFilaDeTblAlumnos();
+        asignarClicASelectTipoDeDocumento();
+        asignarClicARegistrarDocumentoDeProyectoGuiado();
     </script>
 
     <script defer id="scriptAdministrarPasos">              
@@ -451,14 +342,27 @@
     </script>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" name="VentanamodalAgregarTipoDeDocumentoScript">
+        //Funcion para controlar ventana modal para agregar tipo de documento
         $(document).ready(function () {
             $("#btnAgregarTipoDeDocumento").click(function(){
                 $("#modalAgrgarTipoDeDocumento").modal('show');
             });
 
             $("#btnCerrarVentanaModal").click(function(){
+                $("#modalAgrgarTipoDeDocumento").modal('hide');
+            });
+
+            //Agregar la nueva opcion de tipo de documento al combobox desde la ventana modal
+            $("#btnAgregarTipoDeDocumentoModal").click(function(){
+                let tipoDeDocumento = document.getElementById("inputNombreTipoDocumento").value
+                var select = document.getElementById("selectTipoDocumento");
+                var option = document.createElement("option");
+                option.text = tipoDeDocumento;
+                select.add(option);
+                select.value = tipoDeDocumento;
+                let inputNombreDocumento = document.getElementById('inputNombreDocumento');
+                inputNombreDocumento.setAttribute('value', select.value);
                 $("#modalAgrgarTipoDeDocumento").modal('hide');
             });
         });

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SER.Pages
 {
+    [IgnoreAntiforgeryToken]
     public class RegistrarDocumentoProyectoGuiadoModel : PageModel
     {
         private readonly SERContext _context;
@@ -53,11 +54,13 @@ namespace SER.Pages
             return Page();
         }
 
+        [HttpPost]
         public IActionResult OnPost()
         {
             getAlumnosProyectoGuiado();
             AlumnoProyectoGuiado alumnoSeleccionado = AlumnosProyectoGuiado.Where(a => a.Matricula.Equals(IDAlumnoSeleccionado)).FirstOrDefault();
             DocumentoProyectoGuiado.TrabajoRecepcionalId = alumnoSeleccionado.TrabajoRecepcionalId;
+            DocumentoProyectoGuiado.ExperienciaEducativaId = alumnoSeleccionado.ExperienciaEducativaID;
             if (ArchivoDeProyectoGuiado != null)
             {
                 if (ArchivoDeProyectoGuiado.Length > 0)
@@ -71,7 +74,8 @@ namespace SER.Pages
                 }
 
             }
-
+            _context.Documentos.Add(DocumentoProyectoGuiado);
+            _context.SaveChanges();
             return new OkObjectResult("Documento de proyecto guiado guardado.");
         }
 

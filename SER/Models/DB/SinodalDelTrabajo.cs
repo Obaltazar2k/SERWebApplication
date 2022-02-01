@@ -26,7 +26,7 @@ namespace SER.Models.DB
         public int SinodalDelTrabajoId { get; set; }
         [Required]
         [StringLength(255, MinimumLength = 3, ErrorMessage = "La longitud del nombre debe ser mayor a 10 caracteres y menor que 255")]
-        [RegularExpression (@"/^[a-zA-Z\s]*$/", ErrorMessage = "Este campo no admite números")]
+        //[RegularExpression (@"/^[a-zA-Z\s]*$/", ErrorMessage = "Este campo no admite números")]
         public string? Nombre { get; set; }
 
         public virtual ICollection<Direccion> Direccions { get; set; }

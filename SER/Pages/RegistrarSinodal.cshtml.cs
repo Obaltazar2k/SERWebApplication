@@ -21,8 +21,8 @@ namespace SER.Pages
             {
                 using (var DbContext = new SERContext())
                 {
-                    //DbContext.SinodalDelTrabajos.Add(SinodalDelTrabajo);
-                    //DbContext.SaveChanges();
+                    DbContext.SinodalDelTrabajos.Add(SinodalDelTrabajo);
+                    DbContext.SaveChanges();
                     new OkObjectResult(SinodalDelTrabajo.Nombre);
                 }
                 return RedirectToPage("/Menus/UIMaestro");
