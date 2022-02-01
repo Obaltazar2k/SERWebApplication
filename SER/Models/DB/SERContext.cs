@@ -130,6 +130,8 @@ namespace SER.Models.DB
                     .HasMaxLength(200)
                     .IsUnicode(false);
 
+                entity.Property(e => e.ExperienciaEducativaId).HasColumnName("ExperienciaEducativaID");
+
                 entity.Property(e => e.Fechadeinicio).HasColumnType("date");
 
                 entity.Property(e => e.Matricula)
@@ -143,6 +145,8 @@ namespace SER.Models.DB
                 entity.Property(e => e.Nombre)
                     .HasMaxLength(200)
                     .IsUnicode(false);
+
+                entity.Property(e => e.TrabajoRecepcionalId).HasColumnName("TrabajoRecepcionalID");
             });
 
             modelBuilder.Entity<CuerpoAcademico>(entity =>
@@ -244,13 +248,20 @@ namespace SER.Models.DB
 
                 entity.Property(e => e.DocumentoId).HasColumnName("DocumentoID");
 
-                entity.Property(e => e.ExamenDefensaId).HasColumnName("ExamenDefensaID");
+                entity.Property(e => e.ExperienciaEducativaId).HasColumnName("ExperienciaEducativaID");
 
                 entity.Property(e => e.NombreDocumento)
                     .HasMaxLength(200)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Notas).IsUnicode(false);
+
                 entity.Property(e => e.TrabajoRecepcionalId).HasColumnName("TrabajoRecepcionalID");
+
+                entity.HasOne(d => d.ExperienciaEducativa)
+                    .WithMany(p => p.Documentos)
+                    .HasForeignKey(d => d.ExperienciaEducativaId)
+                    .HasConstraintName("FK_Documento_ExperienciaEducativa");
 
                 entity.HasOne(d => d.TrabajoRecepcional)
                     .WithMany(p => p.Documentos)

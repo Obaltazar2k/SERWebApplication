@@ -12,6 +12,8 @@ namespace SER.Models.DB
         public DateTime Fechadeinicio { get; set; }
         public string? Modalidad { get; set; }
         public string? ExperienciaEducativa { get; set; }
+        public int ExperienciaEducativaId { get; set; }
+        public int TrabajoRecepcionalId { get; set; }
         public string ShortDateTime(DateTime fechaInicio)
         {
             string shortDate = fechaInicio.ToString("d");
