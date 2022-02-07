@@ -27,13 +27,13 @@ namespace SER.Pages
                 bool sinodalYaExiste = sinodalesExistentes.Any(s => s.CorreoElectronico.Equals(SinodalDelTrabajo.CorreoElectronico));
                 if (sinodalYaExiste)
                 {
+                    TempData["ErrorMessage"] = "Sinodal Existente";
                     return Page();
                 }
                 else
                 {
                     _context.SinodalDelTrabajos.Add(SinodalDelTrabajo);
                     _context.SaveChanges();
-                    new OkObjectResult(SinodalDelTrabajo.Nombre);
                     return RedirectToPage("/Menus/UIMaestro");
                 }                              
             }
